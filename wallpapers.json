@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Nature Sunset",
+    "category": "Nature",
+    "url": "https://raw.githubusercontent.com/USERNAME/wallpapers/main/wallpapers/nature1.jpg"
+  },
+  {
+    "name": "City Night",
+    "category": "City",
+    "url": "https://raw.githubusercontent.com/USERNAME/wallpapers/main/wallpapers/city1.jpg"
+  },
+  {
+    "name": "AMOLED Dark",
+    "category": "AMOLED",
+    "url": "https://raw.githubusercontent.com/USERNAME/wallpapers/main/wallpapers/amoled1.jpg"
+  },
+  {
+    "name": "Abstract Art",
+    "category": "Abstract",
+    "url": "https://raw.githubusercontent.com/USERNAME/wallpapers/main/wallpapers/abstract1.jpg"
+  },
+  {
+    "name": "Minimal Mountain",
+    "category": "Minimal",
+    "url": "https://raw.githubusercontent.com/USERNAME/wallpapers/main/wallpapers/minimal1.jpg"
+  }
+]
