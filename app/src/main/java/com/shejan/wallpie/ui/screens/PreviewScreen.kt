@@ -148,7 +148,7 @@ fun PreviewScreen(
                     onClick = onBack,
                     modifier = Modifier
                         .statusBarsPadding()
-                        .padding(top = 48.dp, start = 16.dp)
+                        .padding(top = 16.dp, start = 16.dp)
                         .align(Alignment.TopStart)
                         .background(Color.Black.copy(alpha = 0.3f), CircleShape)
                 ) {
