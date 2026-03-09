@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Wallpaper
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,50 +31,48 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.shejan.wallpie.model.Wallpaper
 import com.shejan.wallpie.ui.viewmodel.WallpaperState
 import com.shejan.wallpie.ui.viewmodel.WallpaperViewModel
 import com.shejan.wallpie.utils.WallpaperType
 import com.shejan.wallpie.utils.WallpaperUtils
-
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
-
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 
 @OptIn(ExperimentalGlideComposeApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PreviewScreen(
     viewModel: WallpaperViewModel,
     initialIndex: Int,
+    source: String = "all",
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val wallpapers = (uiState as? WallpaperState.Success)?.wallpapers ?: emptyList()
+    val favourites: List<Wallpaper> by viewModel.favouriteWallpapers.collectAsState(initial = emptyList())
+    
+    val wallpapers = if (source == "fav") {
+        favourites
+    } else {
+        (uiState as? WallpaperState.Success)?.wallpapers ?: emptyList()
+    }
+    
     val context = LocalContext.current
     val window = (context as? Activity)?.window
     
     // Edge swipe protection logic
     val configuration = LocalConfiguration.current
     val density = configuration.densityDpi / 160f
-    val edgeThresholdPx = 40 * density // 40dp in pixels
+    val edgeThresholdPx = 40 * density
     var userScrollEnabled by remember { mutableStateOf(true) }
 
-    // ... (rest of the system bar hiding code) ...
-    // Hide system bars for immersive preview
+    // Transparent system bars for edge-to-edge preview
     if (window != null) {
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
         SideEffect {
-            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
-            windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
-        
-        // Restore system bars when leaving this screen
-        DisposableEffect(Unit) {
-            onDispose {
-                windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
-            }
+            windowInsetsController.isAppearanceLightStatusBars = false
+            windowInsetsController.isAppearanceLightNavigationBars = false
         }
     }
 
@@ -83,11 +83,20 @@ fun PreviewScreen(
         return
     }
 
-    val pagerState = rememberPagerState(initialPage = initialIndex, pageCount = { wallpapers.size })
+    val pageCount = wallpapers.size
+    val safeIndex = initialIndex.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
+    val pagerState = rememberPagerState(initialPage = safeIndex, pageCount = { pageCount })
     var showDialog by remember { mutableStateOf(false) }
     var controlsVisible by remember { mutableStateOf(true) }
     
-    val currentWallpaper = wallpapers[pagerState.currentPage]
+    val currentWallpaper = if (wallpapers.isNotEmpty()) wallpapers[pagerState.currentPage.coerceIn(0, pageCount - 1)] else null
+    
+    var isFavourite by remember(currentWallpaper?.url) { mutableStateOf(false) }
+    LaunchedEffect(currentWallpaper?.url) {
+        currentWallpaper?.let { 
+            isFavourite = viewModel.isFavourite(it.url)
+        }
+    }
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -97,8 +106,6 @@ fun PreviewScreen(
                     val down = awaitFirstDown(requireUnconsumed = false)
                     val isNearEdge = down.position.x < edgeThresholdPx || down.position.x > (size.width - edgeThresholdPx)
                     userScrollEnabled = !isNearEdge
-                    
-                    // Wait for the touch to be released to reset scroll state
                     waitForUpOrCancellation()
                     userScrollEnabled = true
                 }
@@ -111,7 +118,6 @@ fun PreviewScreen(
             controlsVisible = !controlsVisible 
         }
     ) {
-        // Edge-to-edge Pager
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
@@ -126,14 +132,12 @@ fun PreviewScreen(
             )
         }
 
-        // Animated UI Elements
         AnimatedVisibility(
             visible = controlsVisible,
             enter = fadeIn(),
             exit = fadeOut()
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                // Minimal Floating Back Button
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
@@ -145,7 +149,6 @@ fun PreviewScreen(
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                 }
 
-                // Bottom Controls
                 Surface(
                     modifier = Modifier
                         .navigationBarsPadding()
@@ -158,13 +161,33 @@ fun PreviewScreen(
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
-                        IconButton(onClick = { showDialog = true }) {
+                        IconButton(onClick = { 
+                            currentWallpaper?.let {
+                                viewModel.toggleFavourite(it)
+                                isFavourite = !isFavourite
+                            }
+                        }) {
+                            Icon(
+                                imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Toggle Favourite",
+                                tint = if (isFavourite) Color.Red else Color.White
+                            )
+                        }
+                        IconButton(onClick = { if (currentWallpaper != null) showDialog = true }) {
                             Icon(Icons.Default.Wallpaper, contentDescription = "Set Wallpaper", tint = Color.White)
                         }
-                        IconButton(onClick = { WallpaperUtils.downloadWallpaper(context, currentWallpaper.url, currentWallpaper.name) }) {
+                        IconButton(onClick = { 
+                            currentWallpaper?.let { 
+                                WallpaperUtils.downloadWallpaper(context, it.url, it.name) 
+                            }
+                        }) {
                             Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White)
                         }
-                        IconButton(onClick = { WallpaperUtils.shareWallpaper(context, currentWallpaper.url) }) {
+                        IconButton(onClick = { 
+                            currentWallpaper?.let { 
+                                WallpaperUtils.shareWallpaper(context, it.url) 
+                            }
+                        }) {
                             Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White)
                         }
                     }
@@ -183,21 +206,27 @@ fun PreviewScreen(
                         TextButton(
                             modifier = Modifier.fillMaxWidth(),
                             onClick = {
-                                WallpaperUtils.setWallpaper(context, currentWallpaper.url, WallpaperType.HOME)
+                                currentWallpaper?.let {
+                                    WallpaperUtils.setWallpaper(context, it.url, WallpaperType.HOME)
+                                }
                                 showDialog = false
                             }
                         ) { Text("Home Screen") }
                         TextButton(
                             modifier = Modifier.fillMaxWidth(),
                             onClick = {
-                                WallpaperUtils.setWallpaper(context, currentWallpaper.url, WallpaperType.LOCK)
+                                currentWallpaper?.let {
+                                    WallpaperUtils.setWallpaper(context, it.url, WallpaperType.LOCK)
+                                }
                                 showDialog = false
                             }
                         ) { Text("Lock Screen") }
                         TextButton(
                             modifier = Modifier.fillMaxWidth(),
                             onClick = {
-                                WallpaperUtils.setWallpaper(context, currentWallpaper.url, WallpaperType.BOTH)
+                                currentWallpaper?.let {
+                                    WallpaperUtils.setWallpaper(context, it.url, WallpaperType.BOTH)
+                                }
                                 showDialog = false
                             }
                         ) { Text("Both Screens") }

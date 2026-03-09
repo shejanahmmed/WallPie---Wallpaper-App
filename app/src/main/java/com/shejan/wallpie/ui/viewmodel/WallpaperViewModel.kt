@@ -3,10 +3,15 @@ package com.shejan.wallpie.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.shejan.wallpie.model.Wallpaper
+import com.shejan.wallpie.model.toFavourite
+import com.shejan.wallpie.model.toWallpaper
 import com.shejan.wallpie.repository.WallpaperRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 sealed class WallpaperState {
@@ -23,11 +28,35 @@ class WallpaperViewModel(private val repository: WallpaperRepository) : ViewMode
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    val favouriteWallpapers: StateFlow<List<Wallpaper>> = repository.getAllFavourites()
+        .map { list -> 
+            list.map { it.toWallpaper() } 
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     private var allWallpapers = listOf<Wallpaper>()
     private var currentCategory = "All"
 
     init {
         fetchWallpapers()
+    }
+
+    fun toggleFavourite(wallpaper: Wallpaper) {
+        viewModelScope.launch {
+            if (repository.isFavourite(wallpaper.url)) {
+                repository.deleteFavourite(wallpaper.toFavourite())
+            } else {
+                repository.insertFavourite(wallpaper.toFavourite())
+            }
+        }
+    }
+
+    suspend fun isFavourite(url: String): Boolean {
+        return repository.isFavourite(url)
     }
 
     fun fetchWallpapers() {
@@ -53,6 +82,8 @@ class WallpaperViewModel(private val repository: WallpaperRepository) : ViewMode
     }
 
     private fun applyFilters() {
+        if (allWallpapers.isEmpty()) return
+
         var filtered = if (currentCategory == "All") {
             allWallpapers
         } else {

@@ -5,32 +5,70 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavDestination
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.android.gms.ads.MobileAds
+import com.shejan.wallpie.data.AppDatabase
 import com.shejan.wallpie.network.RetrofitInstance
 import com.shejan.wallpie.repository.WallpaperRepository
-import com.shejan.wallpie.ui.screens.HomeScreen
-import com.shejan.wallpie.ui.screens.PreviewScreen
+import com.shejan.wallpie.ui.screens.*
 import com.shejan.wallpie.ui.theme.WallPieTheme
 import com.shejan.wallpie.ui.viewmodel.WallpaperViewModel
 import com.shejan.wallpie.ui.viewmodel.WallpaperViewModelFactory
 import com.shejan.wallpie.utils.AdManager
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
+import com.shejan.wallpie.utils.PreferenceManager
+import com.shejan.wallpie.utils.AppTheme
+import androidx.compose.runtime.collectAsState
 
 class MainActivity : ComponentActivity() {
 
-    private val repository by lazy { WallpaperRepository(RetrofitInstance.api) }
+    private val database by lazy { AppDatabase.getDatabase(this) }
+    private val repository by lazy { WallpaperRepository(RetrofitInstance.api, database.favouriteDao()) }
     private val viewModel: WallpaperViewModel by viewModels { WallpaperViewModelFactory(repository) }
+    private val preferenceManager by lazy { PreferenceManager(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,47 +79,231 @@ class MainActivity : ComponentActivity() {
         AdManager.loadInterstitialAd(this)
 
         setContent {
-            WallPieTheme {
-                WallPieApp(viewModel, this)
+            val currentTheme by preferenceManager.themeFlow.collectAsState(initial = AppTheme.SYSTEM)
+            WallPieTheme(appTheme = currentTheme) {
+                WallPieApp(viewModel, this, preferenceManager)
             }
         }
     }
 }
 
 @Composable
-fun WallPieApp(viewModel: WallpaperViewModel, activity: ComponentActivity) {
+fun WallPieApp(
+    viewModel: WallpaperViewModel, 
+    activity: ComponentActivity,
+    preferenceManager: PreferenceManager
+) {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
 
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+    val items = listOf(
+        NavigationItem("Home", "home", Icons.Filled.Home, Icons.Outlined.Home),
+        NavigationItem("Explore", "explore", Icons.Filled.Explore, Icons.Outlined.Explore),
+        NavigationItem("Favourite", "favourite", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder),
+        NavigationItem("Settings", "settings", Icons.Filled.Settings, Icons.Outlined.Settings)
+    )
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        bottomBar = {
+            val showBottomBar = items.any { it.route == currentDestination?.route }
+            if (showBottomBar) {
+                WallPieBottomBar(
+                    items = items,
+                    currentDestination = currentDestination,
+                    onItemClick = { item ->
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
+        }
+    ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = "home",
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(top = innerPadding.calculateTopPadding())
         ) {
             composable("home") {
                 HomeScreen(
                     viewModel = viewModel,
                     onWallpaperClick = { index ->
-                        navController.navigate("preview/$index")
-                        
-                        // Show interstitial ad
+                        navController.navigate("preview/$index/all")
                         AdManager.showInterstitialAd(activity)
                     }
                 )
             }
+            composable("explore") { ExploreScreen() }
+            composable("favourite") { 
+                FavouriteScreen(
+                    viewModel = viewModel,
+                    onWallpaperClick = { index ->
+                        navController.navigate("preview/$index/fav")
+                    }
+                ) 
+            }
+            composable("settings") { SettingsScreen(preferenceManager) }
             composable(
-                route = "preview/{index}",
+                route = "preview/{index}/{source}",
                 arguments = listOf(
-                    navArgument("index") { type = NavType.IntType }
+                    navArgument("index") { type = NavType.IntType },
+                    navArgument("source") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
                 val index = backStackEntry.arguments?.getInt("index") ?: 0
+                val source = backStackEntry.arguments?.getString("source") ?: "all"
                 PreviewScreen(
                     viewModel = viewModel,
                     initialIndex = index,
+                    source = source,
                     onBack = { navController.popBackStack() }
                 )
             }
+        }
+    }
+}
+
+data class NavigationItem(
+    val title: String,
+    val route: String,
+    val selectedIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    val unselectedIcon: androidx.compose.ui.graphics.vector.ImageVector
+)
+
+@Composable
+private fun WallPieBottomBar(
+    items: List<NavigationItem>,
+    currentDestination: NavDestination?,
+    onItemClick: (NavigationItem) -> Unit
+) {
+    val barShape = RoundedCornerShape(28.dp)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = barShape,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            tonalElevation = 4.dp,
+            shadowElevation = 8.dp,
+            border = BorderStroke(
+                width = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items.forEach { item ->
+                    val selected =
+                        currentDestination?.hierarchy?.any { it.route == item.route } == true
+
+                    WallPieBottomBarItem(
+                        item = item,
+                        selected = selected,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onItemClick(item) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WallPieBottomBarItem(
+    item: NavigationItem,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(22.dp)
+    val itemContainerColor by animateColorAsState(
+        targetValue = if (selected) {
+            colorScheme.secondaryContainer.copy(alpha = 0.9f)
+        } else {
+            Color.Transparent
+        },
+        label = "bottom_bar_item_container"
+    )
+    val iconContainerColor by animateColorAsState(
+        targetValue = if (selected) {
+            colorScheme.primary
+        } else {
+            colorScheme.surfaceVariant.copy(alpha = 0.75f)
+        },
+        label = "bottom_bar_icon_container"
+    )
+    val iconTint by animateColorAsState(
+        targetValue = if (selected) colorScheme.onPrimary else colorScheme.onSurfaceVariant,
+        label = "bottom_bar_icon_tint"
+    )
+    val textColor by animateColorAsState(
+        targetValue = if (selected) colorScheme.onSecondaryContainer else colorScheme.onSurfaceVariant,
+        label = "bottom_bar_text"
+    )
+    val iconContainerSize by animateDpAsState(
+        targetValue = if (selected) 38.dp else 34.dp,
+        label = "bottom_bar_icon_size"
+    )
+
+    Surface(
+        modifier = modifier
+            .height(72.dp)
+            .animateContentSize()
+            .clip(shape)
+            .selectable(
+                selected = selected,
+                onClick = onClick,
+                role = Role.Tab
+            ),
+        shape = shape,
+        color = itemContainerColor
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 4.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Surface(
+                modifier = Modifier.size(iconContainerSize),
+                shape = CircleShape,
+                color = iconContainerColor
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                        contentDescription = item.title,
+                        tint = iconTint
+                    )
+                }
+            }
+
+            Text(
+                text = item.title,
+                modifier = Modifier.padding(top = 6.dp),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                color = textColor,
+                maxLines = 1
+            )
         }
     }
 }

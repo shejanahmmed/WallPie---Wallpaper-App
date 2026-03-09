@@ -78,8 +78,6 @@ fun HomeScreen(
             }
         }
 
-        // AdMob Banner
-        AdmobBanner(modifier = Modifier.padding(bottom = 8.dp))
 
         // Wallpaper Grid
         Box(modifier = Modifier.weight(1f)) {
@@ -119,7 +117,7 @@ fun WallpaperGrid(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(8.dp),
+        contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 100.dp),
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -138,14 +136,20 @@ fun WallpaperGrid(
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
-                    Text(
-                        text = wallpaper.name,
+                    Surface(
+                        color = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f),
+                        shape = MaterialTheme.shapes.small,
                         modifier = Modifier
                             .align(Alignment.BottomStart)
-                            .padding(8.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = androidx.compose.ui.graphics.Color.White
-                    )
+                            .padding(8.dp)
+                    ) {
+                        Text(
+                            text = wallpaper.name,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = androidx.compose.ui.graphics.Color.White
+                        )
+                    }
                 }
             }
         }
