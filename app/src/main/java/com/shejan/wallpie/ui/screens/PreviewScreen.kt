@@ -73,8 +73,8 @@ fun PreviewScreen(
     if (window != null) {
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
         DisposableEffect(Unit) {
-            windowInsetsController.isAppearanceLightStatusBars = false
-            windowInsetsController.isAppearanceLightNavigationBars = false
+            windowInsetsController.isAppearanceLightStatusBars = !isDarkTheme
+            windowInsetsController.isAppearanceLightNavigationBars = !isDarkTheme
             onDispose {
                 windowInsetsController.isAppearanceLightStatusBars = !isDarkTheme
                 windowInsetsController.isAppearanceLightNavigationBars = !isDarkTheme
