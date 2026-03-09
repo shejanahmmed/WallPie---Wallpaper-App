@@ -139,7 +139,14 @@ fun WallPieApp(
                     }
                 )
             }
-            composable("explore") { ExploreScreen() }
+            composable("explore") { 
+                ExploreScreen(
+                    viewModel = viewModel,
+                    onWallpaperClick = { index ->
+                        navController.navigate("preview/$index/explore")
+                    }
+                ) 
+            }
             composable("favourite") { 
                 FavouriteScreen(
                     viewModel = viewModel,
@@ -257,10 +264,7 @@ private fun WallPieBottomBarItem(
         targetValue = if (selected) colorScheme.onSecondaryContainer else colorScheme.onSurfaceVariant,
         label = "bottom_bar_text"
     )
-    val iconContainerSize by animateDpAsState(
-        targetValue = if (selected) 38.dp else 34.dp,
-        label = "bottom_bar_icon_size"
-    )
+    val iconContainerSize = 32.dp
 
     Surface(
         modifier = modifier
@@ -291,15 +295,16 @@ private fun WallPieBottomBarItem(
                     Icon(
                         imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
                         contentDescription = item.title,
-                        tint = iconTint
+                        tint = iconTint,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
 
             Text(
                 text = item.title,
-                modifier = Modifier.padding(top = 4.dp),
-                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(top = 2.dp),
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                 color = textColor,
                 maxLines = 1

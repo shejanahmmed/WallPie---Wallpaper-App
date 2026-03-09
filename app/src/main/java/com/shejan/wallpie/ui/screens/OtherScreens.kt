@@ -12,13 +12,153 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import com.shejan.wallpie.ui.components.WallpaperGrid
+import com.shejan.wallpie.ui.viewmodel.WallpaperState
+
+data class FeaturedSection(
+    val title: String,
+    val description: String,
+    val gradient: Brush
+)
+
 @Composable
-fun ExploreScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Explore Screen", style = MaterialTheme.typography.headlineMedium)
+fun ExploreScreen(
+    viewModel: WallpaperViewModel,
+    onWallpaperClick: (Int) -> Unit
+) {
+    val exploreState by viewModel.exploreState.collectAsState()
+    
+    val featuredSections = listOf(
+        FeaturedSection(
+            "Trending Now", 
+            "Most popular right now", 
+            Brush.linearGradient(listOf(Color(0xFF6200EE), Color(0xFF3700B3)))
+        ),
+        FeaturedSection(
+            "Wall Of The Day", 
+            "Specially picked for today", 
+            Brush.linearGradient(listOf(Color(0xFF03DAC5), Color(0xFF018786)))
+        ),
+        FeaturedSection(
+            "Wall Of The Week", 
+            "Best of this week", 
+            Brush.linearGradient(listOf(Color(0xFFFF0266), Color(0xFFC51162)))
+        ),
+        FeaturedSection(
+            "Wall Of The Month", 
+            "Top charts this month", 
+            Brush.linearGradient(listOf(Color(0xFFFB8C00), Color(0xFFE65100)))
+        )
+    )
+
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val screenHeight = maxHeight
+        val topSectionHeight = screenHeight * 0.28f
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Top Section (28%)
+            Column(
+                modifier = Modifier
+                    .height(topSectionHeight)
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+            ) {
+                Text(
+                    text = "Featured",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
+                )
+                
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(featuredSections) { section ->
+                        FeaturedCard(section)
+                    }
+                }
+            }
+
+            // Bottom Section (Rest)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    text = "Popular Wallpapers",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    when (val state = exploreState) {
+                        is WallpaperState.Loading -> {
+                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        }
+                        is WallpaperState.Success -> {
+                            WallpaperGrid(
+                                wallpapers = state.wallpapers,
+                                onWallpaperClick = onWallpaperClick,
+                                contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 100.dp)
+                            )
+                        }
+                        is WallpaperState.Error -> {
+                            Text(
+                                text = "Error: ${state.message}",
+                                modifier = Modifier.align(Alignment.Center),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FeaturedCard(section: FeaturedSection) {
+    Card(
+        modifier = Modifier
+            .width(240.dp)
+            .fillMaxHeight(),
+        shape = MaterialTheme.shapes.extraLarge,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(section.gradient)
+                .padding(20.dp),
+            contentAlignment = Alignment.BottomStart
+        ) {
+            Column {
+                Text(
+                    text = section.title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = section.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+            }
+        }
     }
 }
 
@@ -58,8 +198,8 @@ fun SettingsScreen(preferenceManager: PreferenceManager) {
     val scope = rememberCoroutineScope()
     var showThemeSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-
     var showClearCacheDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
 
     Column(
@@ -99,6 +239,13 @@ fun SettingsScreen(preferenceManager: PreferenceManager) {
             title = "Clear Cache",
             subtitle = "Keep your app light",
             onClick = { showClearCacheDialog = true }
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        SettingsClickableItem(
+            title = "About",
+            subtitle = "Learn more about WallPie",
+            onClick = { showAboutDialog = true }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -170,6 +317,42 @@ fun SettingsScreen(preferenceManager: PreferenceManager) {
                 dismissButton = {
                     TextButton(onClick = { showClearCacheDialog = false }) {
                         Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        if (showAboutDialog) {
+            AlertDialog(
+                onDismissRequest = { showAboutDialog = false },
+                title = { 
+                    Column {
+                        Text("About WallPie", style = MaterialTheme.typography.headlineSmall)
+                        Text("Version 1.0.0", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            "WallPie is a premium wallpaper application designed to bring stunning, high-quality visuals to your device. Hand-picked collections for a unique home screen experience.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Text(
+                            "Developed by Farjan Ahmmed",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        )
+                        Text(
+                            "Thank you for using WallPie! We hope these wallpapers make your day a little brighter.",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showAboutDialog = false }) {
+                        Text("OK")
                     }
                 }
             )

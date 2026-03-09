@@ -7,8 +7,9 @@ import androidx.room.PrimaryKey
 data class FavouriteWallpaper(
     @PrimaryKey val url: String,
     val name: String,
-    val category: String
+    val category: String,
+    val downloads: Int = 0
 )
 
-fun FavouriteWallpaper.toWallpaper() = Wallpaper(name, category, url)
-fun Wallpaper.toFavourite() = FavouriteWallpaper(url, name, category)
+fun FavouriteWallpaper.toWallpaper() = Wallpaper(name, category, url, downloads)
+fun Wallpaper.toFavourite() = FavouriteWallpaper(url, name, category, downloads)

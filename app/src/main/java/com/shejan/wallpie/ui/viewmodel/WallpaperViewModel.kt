@@ -38,6 +38,9 @@ class WallpaperViewModel(private val repository: WallpaperRepository) : ViewMode
             initialValue = emptyList()
         )
 
+    private val _exploreState = MutableStateFlow<WallpaperState>(WallpaperState.Loading)
+    val exploreState: StateFlow<WallpaperState> = _exploreState.asStateFlow()
+
     private var allWallpapers = listOf<Wallpaper>()
     private var currentCategory = "All"
 
@@ -62,13 +65,27 @@ class WallpaperViewModel(private val repository: WallpaperRepository) : ViewMode
     fun fetchWallpapers() {
         viewModelScope.launch {
             _uiState.value = WallpaperState.Loading
+            _exploreState.value = WallpaperState.Loading
             try {
-                allWallpapers = repository.getWallpapers()
+                // For demo, if downloads are 0, randomize them
+                val fetched = repository.getWallpapers()
+                allWallpapers = fetched.map { 
+                    if (it.downloads == 0) it.copy(downloads = (100..5000).random()) else it 
+                }
                 applyFilters()
+                updateExploreState()
             } catch (e: Exception) {
                 _uiState.value = WallpaperState.Error(e.localizedMessage ?: "Unknown error")
+                _exploreState.value = WallpaperState.Error(e.localizedMessage ?: "Unknown error")
             }
         }
+    }
+
+    private fun updateExploreState() {
+        if (allWallpapers.isEmpty()) return
+        // Sorted by downloads for the Explore screen
+        val sorted = allWallpapers.sortedByDescending { it.downloads }
+        _exploreState.value = WallpaperState.Success(sorted)
     }
 
     fun onSearchQueryChanged(query: String) {

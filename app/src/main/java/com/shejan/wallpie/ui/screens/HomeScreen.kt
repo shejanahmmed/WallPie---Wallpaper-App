@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.shejan.wallpie.model.Wallpaper
-import com.shejan.wallpie.ui.components.AdmobBanner
+import com.shejan.wallpie.ui.components.WallpaperGrid
 import com.shejan.wallpie.ui.viewmodel.WallpaperState
 import com.shejan.wallpie.ui.viewmodel.WallpaperViewModel
 
@@ -122,49 +122,3 @@ fun HomeScreen(
     }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
-@Composable
-fun WallpaperGrid(
-    wallpapers: List<Wallpaper>,
-    onWallpaperClick: (Int) -> Unit
-) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 100.dp),
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        itemsIndexed(wallpapers) { index, wallpaper ->
-            Card(
-                modifier = Modifier
-                    .aspectRatio(0.6f)
-                    .clickable { onWallpaperClick(index) },
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Box {
-                    GlideImage(
-                        model = wallpaper.url,
-                        contentDescription = wallpaper.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    Surface(
-                        color = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f),
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(8.dp)
-                    ) {
-                        Text(
-                            text = wallpaper.name,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = androidx.compose.ui.graphics.Color.White
-                        )
-                    }
-                }
-            }
-        }
-    }
-}

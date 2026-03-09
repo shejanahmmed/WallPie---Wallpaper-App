@@ -50,12 +50,13 @@ fun PreviewScreen(
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val exploreState by viewModel.exploreState.collectAsState()
     val favourites: List<Wallpaper> by viewModel.favouriteWallpapers.collectAsState(initial = emptyList())
     
-    val wallpapers = if (source == "fav") {
-        favourites
-    } else {
-        (uiState as? WallpaperState.Success)?.wallpapers ?: emptyList()
+    val wallpapers = when (source) {
+        "fav" -> favourites
+        "explore" -> (exploreState as? WallpaperState.Success)?.wallpapers ?: emptyList()
+        else -> (uiState as? WallpaperState.Success)?.wallpapers ?: emptyList()
     }
     
     val context = LocalContext.current
