@@ -82,14 +82,17 @@ class MainActivity : ComponentActivity() {
         AdManager.loadInterstitialAd(this)
 
         setContent {
-            val currentTheme by preferenceManager.themeFlow.collectAsState(initial = AppTheme.SYSTEM)
-            val isDarkTheme = when (currentTheme) {
-                AppTheme.SYSTEM -> isSystemInDarkTheme()
-                AppTheme.LIGHT -> false
-                AppTheme.DARK -> true
-            }
-            WallPieTheme(appTheme = currentTheme) {
-                WallPieApp(viewModel, this, preferenceManager, isDarkTheme)
+            val currentThemeNullable by preferenceManager.themeFlow.collectAsState(initial = null)
+            
+            currentThemeNullable?.let { currentTheme ->
+                val isDarkTheme = when (currentTheme) {
+                    AppTheme.SYSTEM -> isSystemInDarkTheme()
+                    AppTheme.LIGHT -> false
+                    AppTheme.DARK -> true
+                }
+                WallPieTheme(appTheme = currentTheme) {
+                    WallPieApp(viewModel, this, preferenceManager, isDarkTheme)
+                }
             }
         }
     }

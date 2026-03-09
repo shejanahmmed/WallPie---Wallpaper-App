@@ -213,26 +213,43 @@ fun FavouriteScreen(
 ) {
     val favourites: List<Wallpaper> by viewModel.favouriteWallpapers.collectAsState(initial = emptyList())
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .statusBarsPadding()) {
-        Text(
-            text = "My Favourites",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(16.dp)
-        )
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 120.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Scrollable Title
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Text(
+                text = "My Favourites",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .padding(bottom = 24.dp)
+            )
+        }
 
         if (favourites.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No favourites yet", style = MaterialTheme.typography.bodyLarge)
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No favourites yet", style = MaterialTheme.typography.bodyLarge)
+                }
             }
         } else {
-            WallpaperGrid(
-                wallpapers = favourites,
-                onWallpaperClick = { index ->
-                    onWallpaperClick(index)
-                }
-            )
+            itemsIndexed(favourites) { index, wallpaper ->
+                WallpaperCard(
+                    wallpaper = wallpaper,
+                    onClick = { onWallpaperClick(index) }
+                )
+            }
         }
     }
 }
@@ -259,7 +276,8 @@ fun SettingsScreen(preferenceManager: PreferenceManager) {
         // ... (Header and Sections)
         Text(
             text = "Settings",
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
@@ -426,12 +444,15 @@ fun SettingsClickableItem(title: String, subtitle: String? = null, onClick: () -
         shape = MaterialTheme.shapes.large,
         tonalElevation = 1.dp,
         shadowElevation = 2.dp,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 72.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center
         ) {
             Text(text = title, style = MaterialTheme.typography.bodyLarge)
             if (subtitle != null) {
@@ -451,12 +472,15 @@ fun SettingsItem(title: String, subtitle: String? = null) {
         shape = MaterialTheme.shapes.large,
         tonalElevation = 1.dp,
         shadowElevation = 2.dp,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 72.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center
         ) {
             Text(text = title, style = MaterialTheme.typography.bodyLarge)
             if (subtitle != null) {
