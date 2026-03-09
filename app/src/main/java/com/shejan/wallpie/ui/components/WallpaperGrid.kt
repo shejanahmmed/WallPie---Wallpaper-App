@@ -31,34 +31,47 @@ fun WallpaperGrid(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         itemsIndexed(wallpapers) { index, wallpaper ->
-            Card(
+            WallpaperCard(
+                wallpaper = wallpaper,
+                onClick = { onWallpaperClick(index) }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+fun WallpaperCard(
+    wallpaper: Wallpaper,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .aspectRatio(0.6f)
+            .clickable { onClick() },
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Box {
+            GlideImage(
+                model = wallpaper.url,
+                contentDescription = wallpaper.name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            Surface(
+                color = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f),
+                shape = MaterialTheme.shapes.small,
                 modifier = Modifier
-                    .aspectRatio(0.6f)
-                    .clickable { onWallpaperClick(index) },
-                shape = MaterialTheme.shapes.medium
+                    .align(Alignment.BottomStart)
+                    .padding(8.dp)
             ) {
-                Box {
-                    GlideImage(
-                        model = wallpaper.url,
-                        contentDescription = wallpaper.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    Surface(
-                        color = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f),
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(8.dp)
-                    ) {
-                        Text(
-                            text = wallpaper.name,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = androidx.compose.ui.graphics.Color.White
-                        )
-                    }
-                }
+                Text(
+                    text = wallpaper.name,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = androidx.compose.ui.graphics.Color.White
+                )
             }
         }
     }

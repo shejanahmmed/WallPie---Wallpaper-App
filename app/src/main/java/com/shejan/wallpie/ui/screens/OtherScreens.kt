@@ -22,8 +22,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import com.shejan.wallpie.ui.components.WallpaperGrid
+import com.shejan.wallpie.ui.components.WallpaperCard
 import com.shejan.wallpie.ui.viewmodel.WallpaperState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 
 data class FeaturedSection(
     val title: String,
@@ -61,70 +66,76 @@ fun ExploreScreen(
         )
     )
 
-    BoxWithConstraints(modifier = Modifier
-        .fillMaxSize()
-        .statusBarsPadding()) {
-        val screenHeight = maxHeight
-        val topSectionHeight = screenHeight * 0.28f
-
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Top Section (28%)
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 120.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Featured Section Header
+        item(span = { GridItemSpan(maxLineSpan) }) {
             Column(
                 modifier = Modifier
-                    .height(topSectionHeight)
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(vertical = 16.dp)
             ) {
                 Text(
                     text = "Featured",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
+                    modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 12.dp)
                 )
                 
                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .height(200.dp)
+                        .fillMaxWidth()
                 ) {
                     items(featuredSections) { section ->
                         FeaturedCard(section)
                     }
                 }
             }
+        }
 
-            // Bottom Section (Rest)
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = "Popular Wallpapers",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+        // Popular Wallpapers Title
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Text(
+                text = "Popular Wallpapers",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+            )
+        }
 
-                Box(modifier = Modifier.fillMaxSize()) {
-                    when (val state = exploreState) {
-                        is WallpaperState.Loading -> {
-                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                        }
-                        is WallpaperState.Success -> {
-                            WallpaperGrid(
-                                wallpapers = state.wallpapers,
-                                onWallpaperClick = onWallpaperClick,
-                                contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 120.dp)
-                            )
-                        }
-                        is WallpaperState.Error -> {
-                            Text(
-                                text = "Error: ${state.message}",
-                                modifier = Modifier.align(Alignment.Center),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
+        // Wallpaper Grid or States
+        when (val state = exploreState) {
+            is WallpaperState.Loading -> {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+            is WallpaperState.Success -> {
+                itemsIndexed(state.wallpapers) { index, wallpaper ->
+                    WallpaperCard(
+                        wallpaper = wallpaper,
+                        onClick = { onWallpaperClick(index) }
+                    )
+                }
+            }
+            is WallpaperState.Error -> {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "Error: ${state.message}",
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }
@@ -139,7 +150,7 @@ fun FeaturedCard(section: FeaturedSection) {
             .width(260.dp)
             .fillMaxHeight(),
         shape = MaterialTheme.shapes.extraLarge,
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Background Gradient
@@ -160,7 +171,7 @@ fun FeaturedCard(section: FeaturedSection) {
                         )
                     )
                     .padding(20.dp),
-                contentAlignment = Alignment.BottomStart
+                contentAlignment = Alignment.CenterStart
             ) {
                 Column {
                     Surface(
