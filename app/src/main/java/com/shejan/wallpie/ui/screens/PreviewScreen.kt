@@ -47,6 +47,7 @@ fun PreviewScreen(
     viewModel: WallpaperViewModel,
     initialIndex: Int,
     source: String = "all",
+    isDarkTheme: Boolean = false,
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -71,9 +72,13 @@ fun PreviewScreen(
     // Transparent system bars for edge-to-edge preview
     if (window != null) {
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-        SideEffect {
+        DisposableEffect(Unit) {
             windowInsetsController.isAppearanceLightStatusBars = false
             windowInsetsController.isAppearanceLightNavigationBars = false
+            onDispose {
+                windowInsetsController.isAppearanceLightStatusBars = !isDarkTheme
+                windowInsetsController.isAppearanceLightNavigationBars = !isDarkTheme
+            }
         }
     }
 

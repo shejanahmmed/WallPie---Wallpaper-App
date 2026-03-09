@@ -60,7 +60,9 @@ fun ExploreScreen(
         )
     )
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier = Modifier
+        .fillMaxSize()
+        .statusBarsPadding()) {
         val screenHeight = maxHeight
         val topSectionHeight = screenHeight * 0.28f
 
@@ -169,7 +171,9 @@ fun FavouriteScreen(
 ) {
     val favourites: List<Wallpaper> by viewModel.favouriteWallpapers.collectAsState(initial = emptyList())
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .statusBarsPadding()) {
         Text(
             text = "My Favourites",
             style = MaterialTheme.typography.headlineMedium,
@@ -205,6 +209,7 @@ fun SettingsScreen(preferenceManager: PreferenceManager) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .padding(horizontal = 16.dp)
             .padding(top = 16.dp, bottom = 100.dp)
             .verticalScroll(rememberScrollState())

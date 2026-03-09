@@ -62,6 +62,7 @@ import com.shejan.wallpie.utils.AdManager
 import com.shejan.wallpie.utils.PreferenceManager
 import com.shejan.wallpie.utils.AppTheme
 import androidx.compose.runtime.collectAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -80,8 +81,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val currentTheme by preferenceManager.themeFlow.collectAsState(initial = AppTheme.SYSTEM)
+            val isDarkTheme = when (currentTheme) {
+                AppTheme.SYSTEM -> isSystemInDarkTheme()
+                AppTheme.LIGHT -> false
+                AppTheme.DARK -> true
+            }
             WallPieTheme(appTheme = currentTheme) {
-                WallPieApp(viewModel, this, preferenceManager)
+                WallPieApp(viewModel, this, preferenceManager, isDarkTheme)
             }
         }
     }
@@ -91,7 +97,8 @@ class MainActivity : ComponentActivity() {
 fun WallPieApp(
     viewModel: WallpaperViewModel, 
     activity: ComponentActivity,
-    preferenceManager: PreferenceManager
+    preferenceManager: PreferenceManager,
+    isDarkTheme: Boolean
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -128,7 +135,7 @@ fun WallPieApp(
         NavHost(
             navController = navController,
             startDestination = "home",
-            modifier = Modifier.padding(top = innerPadding.calculateTopPadding())
+            modifier = Modifier
         ) {
             composable("home") {
                 HomeScreen(
@@ -169,6 +176,7 @@ fun WallPieApp(
                     viewModel = viewModel,
                     initialIndex = index,
                     source = source,
+                    isDarkTheme = isDarkTheme,
                     onBack = { navController.popBackStack() }
                 )
             }
