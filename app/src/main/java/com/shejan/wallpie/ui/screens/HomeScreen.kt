@@ -13,6 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.animation.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
@@ -34,17 +36,22 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val categories = listOf("All", "Nature", "AMOLED", "Minimal", "Abstract", "City")
+    var isSearchFocused by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf("All") }
+    val showCategories = isSearchFocused || searchQuery.isNotEmpty()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // ... (Search Bar and Category Selection code) ...
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .animateContentSize()
+    ) {
         // Search Bar
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { viewModel.onSearchQueryChanged(it) },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                .onFocusChanged { isSearchFocused = it.isFocused },
             placeholder = { Text("Search wallpapers...") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
             trailingIcon = {
@@ -58,23 +65,29 @@ fun HomeScreen(
             shape = MaterialTheme.shapes.large
         )
 
-        // Category Selection
-        LazyRow(
-            modifier = Modifier
-                .padding(vertical = 8.dp)
-                .fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // Category Selection - Animated
+        AnimatedVisibility(
+            visible = showCategories,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
         ) {
-            items(categories) { category ->
-                FilterChip(
-                    selected = selectedCategory == category,
-                    onClick = {
-                        selectedCategory = category
-                        viewModel.filterByCategory(category)
-                    },
-                    label = { Text(category) }
-                )
+            LazyRow(
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(categories) { category ->
+                    FilterChip(
+                        selected = selectedCategory == category,
+                        onClick = {
+                            selectedCategory = category
+                            viewModel.filterByCategory(category)
+                        },
+                        label = { Text(category) }
+                    )
+                }
             }
         }
 

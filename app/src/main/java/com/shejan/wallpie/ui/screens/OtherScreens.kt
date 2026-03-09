@@ -59,6 +59,9 @@ fun SettingsScreen(preferenceManager: PreferenceManager) {
     var showThemeSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
+    var showClearCacheDialog by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -66,6 +69,7 @@ fun SettingsScreen(preferenceManager: PreferenceManager) {
             .padding(top = 16.dp, bottom = 100.dp)
             .verticalScroll(rememberScrollState())
     ) {
+        // ... (Header and Sections)
         Text(
             text = "Settings",
             style = MaterialTheme.typography.headlineMedium,
@@ -90,18 +94,23 @@ fun SettingsScreen(preferenceManager: PreferenceManager) {
         SettingSectionHeader(title = "General")
         SettingsItem(title = "Version", subtitle = "1.0.0")
         Spacer(modifier = Modifier.height(12.dp))
-        SettingsItem(title = "Clear Cache", subtitle = "Keep your app light")
+        
+        SettingsClickableItem(
+            title = "Clear Cache",
+            subtitle = "Keep your app light",
+            onClick = { showClearCacheDialog = true }
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         // Support Section
         SettingSectionHeader(title = "Support")
-        val context = androidx.compose.ui.platform.LocalContext.current
+        val supportContext = androidx.compose.ui.platform.LocalContext.current
         SettingsClickableItem(
             title = "Privacy Policy",
             onClick = {
                 val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://www.farjan.me/WallPiePrivacyPolicy/"))
-                context.startActivity(intent)
+                supportContext.startActivity(intent)
             }
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -109,6 +118,7 @@ fun SettingsScreen(preferenceManager: PreferenceManager) {
         Spacer(modifier = Modifier.height(12.dp))
         SettingsItem(title = "Contact Us")
 
+        // Dialogs and Sheets
         if (showThemeSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showThemeSheet = false },
@@ -127,6 +137,42 @@ fun SettingsScreen(preferenceManager: PreferenceManager) {
                     }
                 )
             }
+        }
+
+        if (showClearCacheDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearCacheDialog = false },
+                title = { Text("Clear Cache") },
+                text = { Text("Are you sure you want to clear the app cache? This will free up space but may slightly increase loading times for previously viewed wallpapers.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showClearCacheDialog = false
+                            scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                try {
+                                    com.bumptech.glide.Glide.get(context).clearDiskCache()
+                                    context.cacheDir.deleteRecursively()
+                                    launch(kotlinx.coroutines.Dispatchers.Main) {
+                                        com.bumptech.glide.Glide.get(context).clearMemory()
+                                        android.widget.Toast.makeText(context, "Cache cleared successfully", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                } catch (e: Exception) {
+                                    launch(kotlinx.coroutines.Dispatchers.Main) {
+                                        android.widget.Toast.makeText(context, "Failed to clear cache", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Clear", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearCacheDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }

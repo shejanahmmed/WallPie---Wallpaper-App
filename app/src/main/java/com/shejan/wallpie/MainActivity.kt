@@ -205,7 +205,7 @@ private fun WallPieBottomBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 10.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 items.forEach { item ->
@@ -264,7 +264,7 @@ private fun WallPieBottomBarItem(
 
     Surface(
         modifier = modifier
-            .height(72.dp)
+            .height(64.dp)
             .animateContentSize()
             .clip(shape)
             .selectable(
@@ -278,7 +278,7 @@ private fun WallPieBottomBarItem(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 4.dp, vertical = 8.dp),
+                .padding(horizontal = 4.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -298,7 +298,7 @@ private fun WallPieBottomBarItem(
 
             Text(
                 text = item.title,
-                modifier = Modifier.padding(top = 6.dp),
+                modifier = Modifier.padding(top = 4.dp),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                 color = textColor,
