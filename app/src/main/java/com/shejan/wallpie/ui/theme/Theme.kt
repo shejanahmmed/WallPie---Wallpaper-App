@@ -16,13 +16,17 @@ import com.shejan.wallpie.utils.AppTheme
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
     secondary = PurpleGrey80,
-    tertiary = Pink80
+    tertiary = Pink80,
+    secondaryContainer = androidx.compose.ui.graphics.Color.White,
+    onSecondaryContainer = androidx.compose.ui.graphics.Color.Black
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = Purple40,
     secondary = PurpleGrey40,
-    tertiary = Pink40
+    tertiary = Pink40,
+    secondaryContainer = androidx.compose.ui.graphics.Color(0xFF1C1B1F), // Light Black
+    onSecondaryContainer = androidx.compose.ui.graphics.Color.White // Icon: White contrast
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
@@ -48,8 +52,10 @@ fun WallPieTheme(
         AppTheme.DARK -> true
     }
 
+    val isDynamicEnabled = appTheme == AppTheme.SYSTEM && dynamicColor
+
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        isDynamicEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }

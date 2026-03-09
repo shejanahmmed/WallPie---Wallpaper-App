@@ -261,14 +261,14 @@ private fun WallPieBottomBarItem(
     )
     val iconContainerColor by animateColorAsState(
         targetValue = if (selected) {
-            colorScheme.primary
+            Color.Transparent
         } else {
             colorScheme.surfaceVariant.copy(alpha = 0.75f)
         },
         label = "bottom_bar_icon_container"
     )
     val iconTint by animateColorAsState(
-        targetValue = if (selected) colorScheme.onPrimary else colorScheme.onSurfaceVariant,
+        targetValue = if (selected) colorScheme.onSecondaryContainer else colorScheme.onSurfaceVariant,
         label = "bottom_bar_icon_tint"
     )
     val textColor by animateColorAsState(
