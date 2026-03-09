@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -61,6 +62,7 @@ import com.shejan.wallpie.ui.viewmodel.WallpaperViewModelFactory
 import com.shejan.wallpie.utils.AdManager
 import com.shejan.wallpie.utils.PreferenceManager
 import com.shejan.wallpie.utils.AppTheme
+import androidx.compose.foundation.background
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 
@@ -113,6 +115,7 @@ fun WallPieApp(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             val showBottomBar = items.any { it.route == currentDestination?.route }
             if (showBottomBar) {
@@ -209,7 +212,7 @@ private fun WallPieBottomBar(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = barShape,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            color = MaterialTheme.colorScheme.surface,
             tonalElevation = 4.dp,
             shadowElevation = 8.dp,
             border = BorderStroke(

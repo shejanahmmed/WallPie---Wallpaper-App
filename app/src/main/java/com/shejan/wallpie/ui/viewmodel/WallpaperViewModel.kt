@@ -98,6 +98,13 @@ class WallpaperViewModel(private val repository: WallpaperRepository) : ViewMode
         applyFilters()
     }
 
+    fun incrementDownloadCount(wallpaper: Wallpaper) {
+        allWallpapers = allWallpapers.map {
+            if (it.url == wallpaper.url) it.copy(downloads = it.downloads + 1) else it
+        }
+        updateExploreState()
+    }
+
     private fun applyFilters() {
         if (allWallpapers.isEmpty()) return
 

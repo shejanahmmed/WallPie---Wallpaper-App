@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import com.shejan.wallpie.ui.components.WallpaperGrid
 import com.shejan.wallpie.ui.viewmodel.WallpaperState
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 data class FeaturedSection(
     val title: String,
@@ -114,7 +115,7 @@ fun ExploreScreen(
                             WallpaperGrid(
                                 wallpapers = state.wallpapers,
                                 onWallpaperClick = onWallpaperClick,
-                                contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 100.dp)
+                                contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 120.dp)
                             )
                         }
                         is WallpaperState.Error -> {
@@ -135,30 +136,60 @@ fun ExploreScreen(
 fun FeaturedCard(section: FeaturedSection) {
     Card(
         modifier = Modifier
-            .width(240.dp)
+            .width(260.dp)
             .fillMaxHeight(),
         shape = MaterialTheme.shapes.extraLarge,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(section.gradient)
-                .padding(20.dp),
-            contentAlignment = Alignment.BottomStart
-        ) {
-            Column {
-                Text(
-                    text = section.title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = section.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.8f)
-                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Background Gradient
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(section.gradient)
+            )
+            
+            // Content Overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)),
+                            startY = 300f
+                        )
+                    )
+                    .padding(20.dp),
+                contentAlignment = Alignment.BottomStart
+            ) {
+                Column {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "SPECIAL",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = section.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = section.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                }
             }
         }
     }
@@ -211,7 +242,7 @@ fun SettingsScreen(preferenceManager: PreferenceManager) {
             .fillMaxSize()
             .statusBarsPadding()
             .padding(horizontal = 16.dp)
-            .padding(top = 16.dp, bottom = 100.dp)
+            .padding(top = 16.dp)
             .verticalScroll(rememberScrollState())
     ) {
         // ... (Header and Sections)
@@ -362,6 +393,8 @@ fun SettingsScreen(preferenceManager: PreferenceManager) {
                 }
             )
         }
+
+        Spacer(modifier = Modifier.height(120.dp))
     }
 }
 

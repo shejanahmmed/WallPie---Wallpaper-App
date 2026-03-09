@@ -184,6 +184,7 @@ fun PreviewScreen(
                         }
                         IconButton(onClick = { 
                             currentWallpaper?.let { 
+                                viewModel.incrementDownloadCount(it)
                                 WallpaperUtils.downloadWallpaper(context, it.url, it.name) 
                             }
                         }) {
