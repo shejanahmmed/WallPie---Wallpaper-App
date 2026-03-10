@@ -40,47 +40,49 @@ fun ExploreScreen(
     val exploreState by viewModel.exploreState.collectAsState()
     
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 120.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        // Popular Wallpapers Title
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Text(
-                text = "Popular Wallpapers",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
-            )
-        }
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(
+            text = "Latest Wallpapers",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp)
+                .padding(top = 16.dp, bottom = 24.dp)
+        )
 
-        // Wallpaper Grid or States
-        when (val state = exploreState) {
-            is WallpaperState.Loading -> {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 120.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Wallpaper Grid or States
+            when (val state = exploreState) {
+                is WallpaperState.Loading -> {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
                     }
                 }
-            }
-            is WallpaperState.Success -> {
-                itemsIndexed(state.wallpapers) { index, wallpaper ->
-                    WallpaperCard(
-                        wallpaper = wallpaper,
-                        onClick = { onWallpaperClick(index) }
-                    )
-                }
-            }
-            is WallpaperState.Error -> {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "Error: ${state.message}",
-                            color = MaterialTheme.colorScheme.error
+                is WallpaperState.Success -> {
+                    itemsIndexed(state.wallpapers) { index, wallpaper ->
+                        WallpaperCard(
+                            wallpaper = wallpaper,
+                            onClick = { onWallpaperClick(index) }
                         )
+                    }
+                }
+                is WallpaperState.Error -> {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "Error: ${state.message}",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
             }
@@ -96,42 +98,43 @@ fun FavouriteScreen(
 ) {
     val favourites: List<Wallpaper> by viewModel.favouriteWallpapers.collectAsState(initial = emptyList())
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 120.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        // Scrollable Title
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Text(
-                text = "My Favourites",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .statusBarsPadding()
-                    .padding(bottom = 24.dp)
-            )
-        }
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(
+            text = "My Favourites",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp)
+                .padding(top = 16.dp, bottom = 24.dp)
+        )
 
-        if (favourites.isEmpty()) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No favourites yet", style = MaterialTheme.typography.bodyLarge)
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 120.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+
+            if (favourites.isEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No favourites yet", style = MaterialTheme.typography.bodyLarge)
+                    }
                 }
-            }
-        } else {
-            itemsIndexed(favourites) { index, wallpaper ->
-                WallpaperCard(
-                    wallpaper = wallpaper,
-                    onClick = { onWallpaperClick(index) }
-                )
+            } else {
+                itemsIndexed(favourites) { index, wallpaper ->
+                    WallpaperCard(
+                        wallpaper = wallpaper,
+                        onClick = { onWallpaperClick(index) }
+                    )
+                }
             }
         }
     }

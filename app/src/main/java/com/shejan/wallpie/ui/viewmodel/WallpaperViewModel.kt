@@ -83,9 +83,9 @@ class WallpaperViewModel(private val repository: WallpaperRepository) : ViewMode
 
     private fun updateExploreState() {
         if (allWallpapers.isEmpty()) return
-        // Sorted by downloads for the Explore screen
-        val sorted = allWallpapers.sortedByDescending { it.downloads }
-        _exploreState.value = WallpaperState.Success(sorted)
+        // Reversing allWallpapers to show the latest (newly added) wallpapers first
+        val latest = allWallpapers.reversed()
+        _exploreState.value = WallpaperState.Success(latest)
     }
 
     fun onSearchQueryChanged(query: String) {
