@@ -22,18 +22,24 @@ object WallpaperUtils {
             .into(object : CustomTarget<Bitmap>() {
                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                     val wallpaperManager = WallpaperManager.getInstance(context)
-                    try {
-                        when (type) {
-                            WallpaperType.HOME -> wallpaperManager.setBitmap(resource, null, true, WallpaperManager.FLAG_SYSTEM)
-                            WallpaperType.LOCK -> wallpaperManager.setBitmap(resource, null, true, WallpaperManager.FLAG_LOCK)
-                            WallpaperType.BOTH -> {
-                                wallpaperManager.setBitmap(resource, null, true, WallpaperManager.FLAG_SYSTEM)
-                                wallpaperManager.setBitmap(resource, null, true, WallpaperManager.FLAG_LOCK)
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                        try {
+                            when (type) {
+                                WallpaperType.HOME -> wallpaperManager.setBitmap(resource, null, true, WallpaperManager.FLAG_SYSTEM)
+                                WallpaperType.LOCK -> wallpaperManager.setBitmap(resource, null, true, WallpaperManager.FLAG_LOCK)
+                                WallpaperType.BOTH -> {
+                                    wallpaperManager.setBitmap(resource, null, true, WallpaperManager.FLAG_SYSTEM)
+                                    wallpaperManager.setBitmap(resource, null, true, WallpaperManager.FLAG_LOCK)
+                                }
+                            }
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                Toast.makeText(context, "Wallpaper set successfully!", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                Toast.makeText(context, "Error setting wallpaper: ${e.message}", Toast.LENGTH_SHORT).show()
                             }
                         }
-                        Toast.makeText(context, "Wallpaper set successfully!", Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Error setting wallpaper: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
 
