@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -40,6 +41,14 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import com.shejan.wallpie.utils.MetadataUtils
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Height
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Image
 
 @OptIn(ExperimentalGlideComposeApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -73,11 +82,12 @@ fun PreviewScreen(
     if (window != null) {
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
         DisposableEffect(Unit) {
-            windowInsetsController.isAppearanceLightStatusBars = !isDarkTheme
-            windowInsetsController.isAppearanceLightNavigationBars = !isDarkTheme
+            val isLight = !isDarkTheme
+            windowInsetsController.isAppearanceLightStatusBars = isLight
+            windowInsetsController.isAppearanceLightNavigationBars = isLight
             onDispose {
-                windowInsetsController.isAppearanceLightStatusBars = !isDarkTheme
-                windowInsetsController.isAppearanceLightNavigationBars = !isDarkTheme
+                windowInsetsController.isAppearanceLightStatusBars = isLight
+                windowInsetsController.isAppearanceLightNavigationBars = isLight
             }
         }
     }
@@ -93,19 +103,31 @@ fun PreviewScreen(
     val safeIndex = initialIndex.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
     val pagerState = rememberPagerState(initialPage = safeIndex, pageCount = { pageCount })
     var showDialog by remember { mutableStateOf(false) }
+    var showMetadata by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
     var controlsVisible by remember { mutableStateOf(true) }
     
-    val currentWallpaper = if (wallpapers.isNotEmpty()) wallpapers[pagerState.currentPage.coerceIn(0, pageCount - 1)] else null
+    val currentWallpaper = if (wallpapers.isNotEmpty()) wallpapers[pagerState.currentPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0))] else null
     
     var isFavourite by remember(currentWallpaper?.url) { mutableStateOf(false) }
+    var metadata by remember(currentWallpaper?.url) { mutableStateOf<MetadataUtils.ImageMetadata?>(null) }
+
     LaunchedEffect(currentWallpaper?.url) {
         currentWallpaper?.let { 
             isFavourite = viewModel.isFavourite(it.url)
+            metadata = MetadataUtils.getImageMetadata(it.url)
         }
     }
 
     Box(modifier = Modifier
         .fillMaxSize()
+        .pointerInput(Unit) {
+            detectVerticalDragGestures { _, dragAmount ->
+                if (dragAmount < -20f && !showMetadata) {
+                    showMetadata = true
+                }
+            }
+        }
         .pointerInput(Unit) {
             awaitPointerEventScope {
                 while (true) {
@@ -202,6 +224,69 @@ fun PreviewScreen(
             }
         }
 
+        if (showMetadata) {
+            ModalBottomSheet(
+                onDismissRequest = { showMetadata = false },
+                sheetState = sheetState,
+                containerColor = MaterialTheme.colorScheme.surface,
+                dragHandle = { BottomSheetDefaults.DragHandle() }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 32.dp)
+                ) {
+                    Text(
+                        text = "Wallpaper Details",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(bottom = 20.dp),
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+
+                    currentWallpaper?.let { wall ->
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            // Row 1
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                MetadataCard(Modifier.weight(1f), Icons.Default.Image, "Name", wall.name)
+                                MetadataCard(Modifier.weight(1f), Icons.Default.Category, "Category", wall.category)
+                            }
+                            
+                            // Row 2
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                MetadataCard(Modifier.weight(1f), Icons.Default.FileDownload, "Downloads", "${wall.downloads}")
+                                
+                                metadata?.let { meta ->
+                                    MetadataCard(Modifier.weight(1f), Icons.Default.Height, "Resolution", meta.resolution)
+                                } ?: run {
+                                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                    }
+                                }
+                            }
+                            
+                            // Row 3
+                            metadata?.let { meta ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    MetadataCard(Modifier.weight(1f), Icons.Default.Info, "Size", meta.size)
+                                    MetadataCard(Modifier.weight(1f), Icons.Default.Info, "Format", meta.format)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
@@ -240,6 +325,53 @@ fun PreviewScreen(
                     }
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun MetadataCard(modifier: Modifier = Modifier, icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+    Surface(
+        modifier = modifier.height(80.dp),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(verticalArrangement = Arrangement.Center) {
+                Text(
+                    text = label, 
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), 
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                )
+                Text(
+                    text = value, 
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
