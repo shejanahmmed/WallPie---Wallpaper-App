@@ -30,11 +30,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 
-data class FeaturedSection(
-    val title: String,
-    val description: String,
-    val gradient: Brush
-)
+
 
 @Composable
 fun ExploreScreen(
@@ -43,28 +39,6 @@ fun ExploreScreen(
 ) {
     val exploreState by viewModel.exploreState.collectAsState()
     
-    val featuredSections = listOf(
-        FeaturedSection(
-            "Trending Now", 
-            "Most popular right now", 
-            Brush.linearGradient(listOf(Color(0xFF6200EE), Color(0xFF3700B3)))
-        ),
-        FeaturedSection(
-            "Wall Of The Day", 
-            "Specially picked for today", 
-            Brush.linearGradient(listOf(Color(0xFF03DAC5), Color(0xFF018786)))
-        ),
-        FeaturedSection(
-            "Wall Of The Week", 
-            "Best of this week", 
-            Brush.linearGradient(listOf(Color(0xFFFF0266), Color(0xFFC51162)))
-        ),
-        FeaturedSection(
-            "Wall Of The Month", 
-            "Top charts this month", 
-            Brush.linearGradient(listOf(Color(0xFFFB8C00), Color(0xFFE65100)))
-        )
-    )
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -73,35 +47,6 @@ fun ExploreScreen(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Featured Section Header
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(vertical = 16.dp)
-            ) {
-                Text(
-                    text = "Featured",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 12.dp)
-                )
-                
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier
-                        .height(200.dp)
-                        .fillMaxWidth()
-                ) {
-                    items(featuredSections) { section ->
-                        FeaturedCard(section)
-                    }
-                }
-            }
-        }
-
         // Popular Wallpapers Title
         item(span = { GridItemSpan(maxLineSpan) }) {
             Text(
@@ -143,68 +88,6 @@ fun ExploreScreen(
     }
 }
 
-@Composable
-fun FeaturedCard(section: FeaturedSection) {
-    Card(
-        modifier = Modifier
-            .width(260.dp)
-            .fillMaxHeight(),
-        shape = MaterialTheme.shapes.extraLarge,
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Background Gradient
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(section.gradient)
-            )
-            
-            // Content Overlay
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)),
-                            startY = 300f
-                        )
-                    )
-                    .padding(20.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Column {
-                    Surface(
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = "SPECIAL",
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Text(
-                        text = section.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = section.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun FavouriteScreen(
