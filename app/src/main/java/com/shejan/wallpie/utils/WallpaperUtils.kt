@@ -12,6 +12,10 @@ import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object WallpaperUtils {
 
@@ -22,7 +26,7 @@ object WallpaperUtils {
             .into(object : CustomTarget<Bitmap>() {
                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                     val wallpaperManager = WallpaperManager.getInstance(context)
-                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    CoroutineScope(Dispatchers.IO).launch {
                         try {
                             when (type) {
                                 WallpaperType.HOME -> wallpaperManager.setBitmap(resource, null, true, WallpaperManager.FLAG_SYSTEM)
@@ -32,11 +36,11 @@ object WallpaperUtils {
                                     wallpaperManager.setBitmap(resource, null, true, WallpaperManager.FLAG_LOCK)
                                 }
                             }
-                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            withContext(Dispatchers.Main) {
                                 Toast.makeText(context, "Wallpaper set successfully!", Toast.LENGTH_SHORT).show()
                             }
                         } catch (e: Exception) {
-                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            withContext(Dispatchers.Main) {
                                 Toast.makeText(context, "Error setting wallpaper: ${e.message}", Toast.LENGTH_SHORT).show()
                             }
                         }
